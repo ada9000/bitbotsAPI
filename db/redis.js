@@ -26,4 +26,9 @@ async function del(key)
     return await client.del(key)
 }
 
-module.exports = {set, get, del};
+function lel(key)
+{
+    return client.get(key)
+}
+
+module.exports = {set, get, del, lel};

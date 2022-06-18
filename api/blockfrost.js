@@ -39,6 +39,10 @@ async function assetToMetadata(assetHash)
     var txHashes = await JSON.parse(await redis.get('txHashes'));
     if (txHashes === null) txHashes = Array();
 
+    var lastBitbots = await JSON.parse(await redis.get('bitbots'));
+    var bitbots = Array();
+    if (lastBitbots === null) lastBitbots = Array();
+
 
     // todo asset to tx hash
     const assetTxs = await API.assetsTransactions(assetHash);
@@ -72,17 +76,18 @@ async function assetToMetadata(assetHash)
                 if (bitbotMeta.payload !== undefined){
                     bitbot.payloads = bitbotMeta.payload
                 }
-                await redis.set(name, JSON.stringify(bitbot))
-                console.log(`Added ${name}`)
+                bitbots.push(bitbot)
+                console.log(`appended ${name}`)
             }
         }
         txHashes.push(txHash)
+        await redis.set('bitbots', JSON.stringify(lastBitbots.concat(bitbots)))
         await redis.set('txHashes', JSON.stringify(txHashes))
     }
 }
 
 
-async function updateKnownAssets()
+async function updateAssetHashes()
 {
     // get page convert to int
     var page = await redis.get('page')
@@ -96,7 +101,6 @@ async function updateKnownAssets()
         page += 1 // page starts at 1
         console.log(`start page ${page}`)
         const assets = await API.assetsPolicyById(policy, {page:page})
-        console.log(assets)
         if (assets.length === 0) {
             pagesLeft = false;
         }
@@ -118,8 +122,8 @@ async function updateKnownAssets()
 }
 
 
-async function test(){
-    updateKnownAssets()
+async function updateKnownBitbots(){
+    await updateAssetHashes()
     const assetHashes = await JSON.parse(await redis.get('assetHashes'))
     if (assetHashes !== null)
     {
@@ -130,5 +134,4 @@ async function test(){
     }
 }
 
-test();
-
+module.exports = {updateKnownBitbots};

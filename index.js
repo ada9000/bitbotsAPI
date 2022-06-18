@@ -10,6 +10,9 @@ const {
 } = require('graphql')
 const app = express()
 
+const blockfrost = require('./api/blockfrost')
+const redis = require('./db/redis')
+
 const ExampleBitbots = [
   {
     name: "bit_bot 0x0000", 
@@ -27,7 +30,6 @@ const ExampleBitbots = [
         "special":"Headless"
       }
     },
-    traits:"https://infura-ipfs.io/ipfs/Qmc97roxXrf9jYAkXPSHxFJJFRjqMseBaxpg7rS9mqkMRH",
     references:['1','2','3'],
     payloads:[{"0":"the"},{"4":"cake"},{"5":"lies"}],
   },
@@ -47,7 +49,6 @@ const ExampleBitbots = [
         "special":"Data bus"
       }
     },
-    traits:"https://infura-ipfs.io/ipfs/QmaywzdsutKJAqbp6Ey5kDt8DfwvWZB2dUdaj4WdbkQd6d",
     references:['1','2','3'],
     payloads:[{"1":"this"},{"2":"is"},{"3":"graphql"}],
   }
@@ -94,7 +95,6 @@ const BitbotType = new GraphQLObjectType({
     name: { type: new GraphQLNonNull(GraphQLString) },
     ipfs: { type: new GraphQLNonNull(GraphQLString) },
     meta: { type: MetaType},
-    traits: { type: TraitsType},
     references: {type: new GraphQLList(GraphQLString)},
     payload: {type: new GraphQLList(PayloadType)}
   })
@@ -103,13 +103,12 @@ const BitbotType = new GraphQLObjectType({
 const RootQueryType = new GraphQLObjectType({
   name: 'Query',
   description: 'Root Query',
-  fields: () => ({
+  fields: () => ({ 
     bitbots: {
       type: new GraphQLList(BitbotType),
       description: 'All bots',
-      resolve: () => {
-        console.log("Hmm bots")
-        return ExampleBitbots
+      resolve: async () => {
+        return JSON.parse(await redis.get('bitbots'))
       }
     },
     bitbot: {
@@ -118,9 +117,9 @@ const RootQueryType = new GraphQLObjectType({
       args: {
         name: { type: GraphQLString }
       },
-      resolve: (parent, args) => {
-        // TODO if none find it...
-        return ExampleBitbots.find(bot => bot.name === args.name)
+      resolve: async (parent, args) => {
+        const bitbots = JSON.parse(await redis.get('bitbots'))
+        return bitbots.find(bot => bot.name === args.name)
       }
     },
   })
@@ -141,6 +140,17 @@ app.use('/graphql', graphqlHTTP({
 
 // start a update job ever 5 min
 
+async function initServer()
+{
+  console.log("Init server");
+  var bitbots = await JSON.parse(await redis.get('bitbots'));
+  if (bitbots === null) await blockfrost.updateKnownBitbots();
+}
 
-app.listen(4000, () => console.log('Server Running'))
+initServer().then(() => {
+  app.listen(4000, () => {
+    console.log('Server Running, localhost:4000')
+  })
+})
+
 
