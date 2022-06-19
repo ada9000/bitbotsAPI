@@ -13,26 +13,6 @@ const API = new blockfrost.BlockFrostAPI({
 
 const policy = "ba3afde69bb939ae4439c36d220e6b2686c6d3091bbc763ac0a1679c"
 
-const t = {
-    name: "bit_bot 0x0000", 
-    ipfs:"https://infura-ipfs.io/ipfs/QmaywzdsutKJAqbp6Ey5kDt8DfwvWZB2dUdaj4WdbkQd6d",
-    meta:{
-      "fruit":"🍒",
-      "moon":"🌓",
-      "uid":"0x0C020F0100000000",
-      "traits":{
-        "background":"Two suns",
-        "ears":"None",
-        "eyes":"None",
-        "hat":"None",
-        "Mouth":"None",
-        "special":"Headless"
-      }
-    },
-    references:['1','2','3'],
-    payloads:[{"0":"the"},{"4":"cake"},{"5":"lies"}],
-}
-
 async function assetToMetadata(assetHash)
 {
     // if assetHash in hashes break
@@ -42,6 +22,11 @@ async function assetToMetadata(assetHash)
     var lastBitbots = await JSON.parse(await redis.get('bitbots'));
     var bitbots = Array();
     if (lastBitbots === null) lastBitbots = Array();
+
+
+    var lastPayloads = await JSON.parse(await redis.get('payloads'));
+    var payloads = Array();
+    if (lastPayloads === null) lastPayloads = Array();
 
 
     // todo asset to tx hash
@@ -75,6 +60,18 @@ async function assetToMetadata(assetHash)
                 }
                 if (bitbotMeta.payload !== undefined){
                     bitbot.payloads = bitbotMeta.payload
+                    // for each payload assign it to a bot
+                    for (const index in bitbotMeta.payload)
+                    {
+                        payloads.push(
+                            {
+                                "id":index,
+                                "name":name,
+                                "data":bitbotMeta.payload[index],
+                                "ipfs":innerMeta.image
+                            }
+                        )
+                    }
                 }
                 bitbots.push(bitbot)
                 console.log(`appended ${name}`)
@@ -82,6 +79,7 @@ async function assetToMetadata(assetHash)
         }
         txHashes.push(txHash)
         await redis.set('bitbots', JSON.stringify(lastBitbots.concat(bitbots)))
+        await redis.set('payloads', JSON.stringify(lastPayloads.concat(payloads)))
         await redis.set('txHashes', JSON.stringify(txHashes))
     }
 }
