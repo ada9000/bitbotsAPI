@@ -61,6 +61,17 @@ const BitbotType = new GraphQLObjectType({
   })
 })
 
+const PayloadsType = new GraphQLObjectType({
+  name: 'Payloads',
+  description: 'Represents a bit_bot payloads',
+  fields: () => ({
+    id: { type: new GraphQLNonNull(GraphQLString) },
+    name: { type: new GraphQLNonNull(GraphQLString) },
+    data: { type: new GraphQLList(GraphQLString) },
+    ipfs: { type: new GraphQLNonNull(GraphQLString) }
+  })
+})
+
 const RootQueryType = new GraphQLObjectType({
   name: 'Query',
   description: 'Root Query',
@@ -83,6 +94,23 @@ const RootQueryType = new GraphQLObjectType({
         return bitbots.find(bot => bot.name === args.name)
       }
     },
+    payloads: {
+      type: new GraphQLList(PayloadsType),
+      description: 'bitbots with given payload',
+      args: {
+        ids: { type: new GraphQLList(GraphQLString) }
+      },
+      resolve: async (parent, args) => {
+        //const bitbots = JSON.parse(await redis.get('bitbots'))
+        const payloads = JSON.parse(await redis.get('payloads'))
+        var filteredPayloads = Array()
+        for (const id in args.ids)
+        {
+          filteredPayloads.push(payloads.find(payload => payload.id === args.ids[id]))
+        }
+        return filteredPayloads;
+      }
+    },
   })
 })
 
@@ -95,11 +123,11 @@ app.use('/graphql', graphqlHTTP({
   graphiql: true
 }))
 
-
-// on first run get all payloads
-// for each search find more data if not there
-
-// start a update job ever 5 min
+async function updateOnChainData()
+{
+  console.log("Updating on chain data")
+  await blockfrost.updateKnownBitbots();
+}
 
 async function initServer()
 {
@@ -109,10 +137,13 @@ async function initServer()
 }
 
 initServer().then(() => {
-  console.log("cors enabled")
+  console.log("Cors enabled")
   app.listen(4000, () => {
     console.log('Server Running, localhost:4000')
   })
+  // update data every minute
+  console.log("Setting 1min update job")
+  setInterval(updateOnChainData, 60000)
 })
 
 
