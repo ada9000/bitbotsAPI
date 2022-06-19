@@ -143,7 +143,7 @@ initServer().then(() => {
   })
   // update data every minute
   console.log("Setting 1min update job")
-  setInterval(updateOnChainData, 60000)
+  setInterval(updateOnChainData, 120000)
 })
 
 
