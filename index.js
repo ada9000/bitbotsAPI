@@ -8,51 +8,12 @@ const {
   GraphQLInt,
   GraphQLNonNull
 } = require('graphql')
+const cors = require('cors')
 const app = express()
+app.use(cors())
 
 const blockfrost = require('./api/blockfrost')
 const redis = require('./db/redis')
-
-const ExampleBitbots = [
-  {
-    name: "bit_bot 0x0000", 
-    ipfs:"https://infura-ipfs.io/ipfs/QmaywzdsutKJAqbp6Ey5kDt8DfwvWZB2dUdaj4WdbkQd6d",
-    meta:{
-      "fruit":"🍒",
-      "moon":"🌓",
-      "uid":"0x0C020F0100000000",
-      "traits":{
-        "background":"Two suns",
-        "ears":"None",
-        "eyes":"None",
-        "hat":"None",
-        "Mouth":"None",
-        "special":"Headless"
-      }
-    },
-    references:['1','2','3'],
-    payloads:[{"0":"the"},{"4":"cake"},{"5":"lies"}],
-  },
-  {
-    name: "bit_bot 0x00C1",
-    ipfs:"https://infura-ipfs.io/ipfs/QmaywzdsutKJAqbp6Ey5kDt8DfwvWZB2dUdaj4WdbkQd6d",
-    meta:{
-      "fruit":"🍒 🍓",
-      "moon":"🌘",
-      "uid":"0x0C02030408020302",
-      "traits":{
-        "background":"Two suns",
-        "ears":"Standard",
-        "eyes":"telescopic",
-        "hat":"Watermelon",
-        "Mouth":"Maintenance open",
-        "special":"Data bus"
-      }
-    },
-    references:['1','2','3'],
-    payloads:[{"1":"this"},{"2":"is"},{"3":"graphql"}],
-  }
-]
 
 const PayloadType = new GraphQLObjectType({
   name: 'Payload',
@@ -148,6 +109,7 @@ async function initServer()
 }
 
 initServer().then(() => {
+  console.log("cors enabled")
   app.listen(4000, () => {
     console.log('Server Running, localhost:4000')
   })
