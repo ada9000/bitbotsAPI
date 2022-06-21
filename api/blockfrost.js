@@ -18,7 +18,7 @@ async function assetToMetadata(assetHash)
     // check if assetHash exists, return if so to avoid duplicate api calls
     const assetCheck = await redis.get(assetHash)
     if (assetCheck === assetHash) return
-
+    console.log(`found new ${assetHash}`)
     // if assetHash in hashes break
     var txHashes = await JSON.parse(await redis.get('txHashes'));
     if (txHashes === null) txHashes = Array();
