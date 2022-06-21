@@ -132,18 +132,17 @@ async function updateOnChainData()
 async function initServer()
 {
   console.log("Init server");
+  await blockfrost.updateKnownBitbots();
   var bitbots = await JSON.parse(await redis.get('bitbots'));
-  if (bitbots === null) await blockfrost.updateKnownBitbots();
 }
 
 initServer().then(() => {
-  console.log("Cors enabled")
   app.listen(4000, () => {
     console.log('Server Running, localhost:4000')
   })
   // update data every minute
   console.log("Setting 1min update job")
-  setInterval(updateOnChainData, 120000)
+  setInterval(updateOnChainData, 60000)
 })
 
 

@@ -15,6 +15,10 @@ const policy = "ba3afde69bb939ae4439c36d220e6b2686c6d3091bbc763ac0a1679c"
 
 async function assetToMetadata(assetHash)
 {
+    // check if assetHash exists, return if so to avoid duplicate api calls
+    const assetCheck = await redis.get(assetHash)
+    if (assetCheck === assetHash) return
+
     // if assetHash in hashes break
     var txHashes = await JSON.parse(await redis.get('txHashes'));
     if (txHashes === null) txHashes = Array();
@@ -82,6 +86,7 @@ async function assetToMetadata(assetHash)
         await redis.set('payloads', JSON.stringify(lastPayloads.concat(payloads)))
         await redis.set('txHashes', JSON.stringify(txHashes))
     }
+    await redis.set(assetHash, assetHash)
 }
 
 
@@ -130,6 +135,7 @@ async function updateKnownBitbots(){
             await assetToMetadata(assetHashes[asset]);
         }
     }
+    console.log("Finished updateKnownBitbot checks")
 }
 
 module.exports = {updateKnownBitbots};
